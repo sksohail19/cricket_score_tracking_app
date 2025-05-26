@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Trophy, Star } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface LiveScorecardProps {
   match: any;
@@ -19,11 +20,13 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
   const [ballHistory, setBallHistory] = useState([]);
   const [currentOverBalls, setCurrentOverBalls] = useState([]);
   const [previousOverBalls, setPreviousOverBalls] = useState([]);
+  const [allOvers, setAllOvers] = useState([]);
   const [showExtraRunsDialog, setShowExtraRunsDialog] = useState(false);
   const [showWicketDialog, setShowWicketDialog] = useState(false);
   const [extraType, setExtraType] = useState('');
   const [wicketType, setWicketType] = useState('');
   const [newBatsman, setNewBatsman] = useState('');
+  const [runOutRuns, setRunOutRuns] = useState(0);
 
   useEffect(() => {
     if (match) {
@@ -125,9 +128,9 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
     newMatch.score[battingTeam].runs += runs;
     
     // Handle extras (wide/no-ball adds 1 extra run)
-    if (isWide || isNoBall) {
+    /*if (isWide || isNoBall) {
       newMatch.score[battingTeam].runs += 1;
-    }
+    }*/
     
     // Handle balls (only count if not wide or no-ball)
     if (!isWide && !isNoBall) {
@@ -161,7 +164,19 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
     // Check if over is complete (6 valid balls)
     const validBalls = newCurrentOverBalls.filter(ball => !ball.isWide && !ball.isNoBall);
     if (validBalls.length === 6) {
-      // Move current over to previous over
+      // Move current over to all overs and previous over
+      const overData = {
+        overNumber: Math.floor(newMatch.score[battingTeam].balls / 6),
+        bowler,
+        balls: newCurrentOverBalls,
+        runs: newCurrentOverBalls.reduce((total, ball) => {
+          let ballRuns = ball.runs;
+          if (ball.isWide || ball.isNoBall) ballRuns += 1;
+          return total + ballRuns;
+        }, 0)
+      };
+      
+      setAllOvers(prev => [...prev, overData]);
       setPreviousOverBalls(newCurrentOverBalls);
       setCurrentOverBalls([]);
       
@@ -194,14 +209,24 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
     const battingTeam = getCurrentBattingTeam();
     const newMatch = { ...currentMatch };
     
-    // Update wickets and balls
+    // For run-out, add the runs scored before the dismissal
+    const runsToAdd = wicketType === 'run-out' ? runOutRuns : 0;
+    
+    // Update runs, wickets and balls
+    newMatch.score[battingTeam].runs += runsToAdd;
     newMatch.score[battingTeam].wickets += 1;
     newMatch.score[battingTeam].balls += 1;
+    
+    // Handle strike rotation for run-out based on runs scored
+    let shouldRotateStrike = false;
+    if (wicketType === 'run-out' && runsToAdd % 2 === 1) {
+      shouldRotateStrike = true;
+    }
     
     // Create ball data for wicket
     const ballData = {
       ball: newMatch.score[battingTeam].balls,
-      runs: 0,
+      runs: runsToAdd,
       isWide: false,
       isNoBall: false,
       isWicket: true,
@@ -220,6 +245,19 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
     // Check if over is complete (6 valid balls)
     const validBalls = newCurrentOverBalls.filter(ball => !ball.isWide && !ball.isNoBall);
     if (validBalls.length === 6) {
+      // Move current over to all overs and previous over
+      const overData = {
+        overNumber: Math.floor(newMatch.score[battingTeam].balls / 6),
+        bowler,
+        balls: newCurrentOverBalls,
+        runs: newCurrentOverBalls.reduce((total, ball) => {
+          let ballRuns = ball.runs;
+          if (ball.isWide || ball.isNoBall) ballRuns += 1;
+          return total + ballRuns;
+        }, 0)
+      };
+      
+      setAllOvers(prev => [...prev, overData]);
       setPreviousOverBalls(newCurrentOverBalls);
       setCurrentOverBalls([]);
       
@@ -234,7 +272,12 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
     
     // Replace striker with new batsman (if available)
     if (newBatsman) {
-      setStriker(newBatsman);
+      if (shouldRotateStrike) {
+        // If strike should rotate due to odd runs in run-out, swap roles
+        setNonStriker(newBatsman);
+      } else {
+        setStriker(newBatsman);
+      }
     }
     
     // Check if match should end
@@ -255,6 +298,7 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
     setShowWicketDialog(false);
     setWicketType('');
     setNewBatsman('');
+    setRunOutRuns(0);
   };
 
   const handleExtraRuns = (extraRuns: number) => {
@@ -658,6 +702,56 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
               </CardContent>
             </Card>
           )}
+
+          {/* All Overs Bowled */}
+          {allOvers.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>All Overs Bowled</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Over</TableHead>
+                      <TableHead>Bowler</TableHead>
+                      <TableHead>Runs</TableHead>
+                      <TableHead>Balls</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allOvers.map((over: any, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{over.overNumber}</TableCell>
+                        <TableCell>{over.bowler}</TableCell>
+                        <TableCell>{over.runs}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 flex-wrap">
+                            {over.balls.map((ball: any, ballIndex: number) => (
+                              <div
+                                key={ballIndex}
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                                  ball.isWicket
+                                    ? 'bg-red-500 text-white'
+                                    : ball.isWide || ball.isNoBall
+                                    ? 'bg-yellow-500 text-white'
+                                    : ball.runs === 4 || ball.runs === 6
+                                    ? 'bg-orange-500 text-white'
+                                    : 'bg-green-500 text-white'
+                                }`}
+                              >
+                                {ball.isWicket ? 'W' : ball.runs}
+                              </div>
+                            ))}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Extra Runs Dialog */}
@@ -713,6 +807,24 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {wicketType === 'run-out' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">Runs scored before run-out (0-6)</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {[0, 1, 2, 3, 4, 5, 6].map((runs) => (
+                      <Button
+                        key={runs}
+                        onClick={() => setRunOutRuns(runs)}
+                        variant={runOutRuns === runs ? "default" : "outline"}
+                        className="w-12 h-12 rounded-full"
+                      >
+                        {runs}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {availableBatsmen.length > 0 && (
                 <div>

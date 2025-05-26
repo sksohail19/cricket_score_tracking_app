@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PlayerImport } from '@/components/PlayerImport';
 
 interface NewMatchSetupProps {
   onMatchStart: (match: any) => void;
@@ -57,6 +58,16 @@ export const NewMatchSetup = ({ onMatchStart }: NewMatchSetupProps) => {
         },
       }));
     }
+  };
+
+  const handleImportPlayers = (teamKey: 'team1' | 'team2', players: string[]) => {
+    setTeams(prev => ({
+      ...prev,
+      [teamKey]: {
+        ...prev[teamKey],
+        players: [...prev[teamKey].players, ...players],
+      },
+    }));
   };
 
   const simulateToss = () => {
@@ -176,7 +187,15 @@ export const NewMatchSetup = ({ onMatchStart }: NewMatchSetupProps) => {
                   </div>
                   
                   <div>
-                    <Label>Players ({teams[teamKey as keyof typeof teams].players.length}/{matchSettings.playersPerTeam})</Label>
+                    <div className="flex justify-between items-center mb-2">
+                      <Label>Players ({teams[teamKey as keyof typeof teams].players.length}/{matchSettings.playersPerTeam})</Label>
+                      <PlayerImport
+                        onImportPlayers={(players) => handleImportPlayers(teamKey as 'team1' | 'team2', players)}
+                        maxPlayers={parseInt(matchSettings.playersPerTeam)}
+                        currentPlayers={teams[teamKey as keyof typeof teams].players}
+                        teamName={teams[teamKey as keyof typeof teams].name || `Team ${index + 1}`}
+                      />
+                    </div>
                     <div className="space-y-2">
                       {teams[teamKey as keyof typeof teams].players.map((player, playerIndex) => (
                         <div key={playerIndex} className="flex items-center gap-2">
