@@ -171,7 +171,7 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
         balls: newCurrentOverBalls,
         runs: newCurrentOverBalls.reduce((total, ball) => {
           let ballRuns = ball.runs;
-          if (ball.isWide || ball.isNoBall) ballRuns += 1;
+          //if (ball.isWide || ball.isNoBall) ballRuns += 1;
           return total + ballRuns;
         }, 0)
       };
@@ -252,7 +252,7 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
         balls: newCurrentOverBalls,
         runs: newCurrentOverBalls.reduce((total, ball) => {
           let ballRuns = ball.runs;
-          if (ball.isWide || ball.isNoBall) ballRuns += 1;
+          //if (ball.isWide || ball.isNoBall) ballRuns += 1;
           return total + ballRuns;
         }, 0)
       };
@@ -368,7 +368,7 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
   const calculateOverRuns = (balls: any[]) => {
     return balls.reduce((total, ball) => {
       let ballRuns = ball.runs;
-      if (ball.isWide || ball.isNoBall) ballRuns += 1;
+      //if (ball.isWide || ball.isNoBall) ballRuns += 1;
       return total + ballRuns;
     }, 0);
   };
@@ -634,7 +634,7 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
                 <span className="text-sm font-normal text-green-600">
                   Runs: {currentOverBalls.reduce((total, ball) => {
                     let ballRuns = ball.runs;
-                    if (ball.isWide || ball.isNoBall) ballRuns += 1;
+                    //if (ball.isWide || ball.isNoBall) ballRuns += 1;
                     return total + ballRuns;
                   }, 0)}
                 </span>
@@ -674,7 +674,7 @@ export const LiveScorecard = ({ match, onSaveExit }: LiveScorecardProps) => {
                   <span className="text-sm font-normal text-green-600">
                     Runs: {previousOverBalls.reduce((total, ball) => {
                       let ballRuns = ball.runs;
-                      if (ball.isWide || ball.isNoBall) ballRuns += 1;
+                     // if (ball.isWide || ball.isNoBall) ballRuns += 1;
                       return total + ballRuns;
                     }, 0)}
                   </span>
